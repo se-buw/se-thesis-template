@@ -69,6 +69,8 @@
 \RequirePackage{ifthen}
 \RequirePackage{siunitx}
 \RequirePackage{tikz}
+\RequirePackage{pdfpages}
+\RequirePackage{etoolbox}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -82,7 +84,6 @@
 \DeclareOption{german}{%
   \renewcommand{\documentlanguage}{ngerman}%
 }
-\ExecuteOptions{german} % default
 
 % Type
 \newcommand{\thesistype}{}
@@ -95,9 +96,9 @@
 \DeclareOption{project}{%
   \renewcommand{\thesistype}{Project Report}%
 }
-\ExecuteOptions{bachelor} % default
 
 \ProcessOptions
+\ExecuteOptions{german,bachelor} % defaults
 
 % Language
 \RequirePackage[\documentlanguage]{babel}
@@ -164,6 +165,20 @@
 \newtoks\thesisauthorplaceofbirth
 \newcommand{\ThesisSetPlaceOfBirth}[1]{\global\thesisauthorplaceofbirth{#1}}
 
+\newcounter{authorcount}
+\setcounter{authorcount}{0}
+\newcommand{\ThesisAddAuthor}[2]{%
+  \addtocounter{authorcount}{1}%
+  \expandafter\gdef\csname authorname\arabic{authorcount}\endcsname{#1}%
+  \expandafter\gdef\csname authorid\arabic{authorcount}\endcsname{#2}%
+  % Keep \thesisauthor updated for pdf properties or checks
+    \ifnum\value{authorcount}=1
+      \global\thesisauthor{#1}%
+    \else
+      \global\thesisauthor\expandafter{\the\thesisauthor, #1}%
+    \fi
+  }
+
 \newtoks\thesisprogramme
 \newcommand{\ThesisSetProgramme}[1]{\global\thesisprogramme{#1}}
 
@@ -205,6 +220,55 @@
 % ... at the begin of the document
 \AtBeginDocument{\checkthesisvariables}
 
+% Helper to check if there's a comma in the author list (multiple authors)   
+\makeatletter
+
+\newcommand{\has@multiple@authors}{%
+  \ifnum\value{authorcount}>1
+    1%
+  \else\ifnum\value{authorcount}=0
+    \expandafter\check@for@comma\the\thesisauthor,\@nil%
+  \else
+    0%
+  \fi\fi
+}
+
+\def\check@for@comma#1,#2\@nil{%
+  \ifx\@nil#2\relax\expandafter\@gobbletwo\fi\@firstoftwo{0}{1}%
+}
+
+% Counters for tracking author/ID positions
+\newcounter{@author@counter}
+\newcounter{@id@counter}
+\newcounter{@pair@counter}
+
+% Output authors and student IDs paired on separate lines
+% Collect both lists as indexed macros, then output by matching indices
+\newcommand{\@@output@authors@and@ids}{%
+  % If user used \ThesisAddAuthor, print all of them
+  \ifnum\value{authorcount}>0
+    \setcounter{@pair@counter}{1}%
+    \@@printaddedauthors%
+  \else
+    % Fallback to the old way for backwards compatibility
+    \the\thesisauthor\hfill\the\thesisfrontpagestudentnumber~\the\thesisauthorstudentnumber\\%
+  \fi
+}
+
+\newcommand{\@@printaddedauthors}{%
+  \ifnum\value{@pair@counter}>\value{authorcount}%
+    % done
+  \else
+    \csname authorname\arabic{@pair@counter}\endcsname\hfill\the\thesisfrontpagestudentnumber~\csname authorid\arabic{@pair@counter}\endcsname\\%
+    \addtocounter{@pair@counter}{1}%
+    \@@printaddedauthors%
+  \fi
+}
+
+\makeatother
+
+% No helper macros needed - format will be handled directly in frontpage
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Template words
@@ -245,6 +309,7 @@
 }{}
 
 % Frontpage
+\makeatletter
 \newcommand{\frontpage}{%
   \thispagestyle{empty}
   \begin{titlepage}
@@ -264,15 +329,17 @@
       {\bfseries\thesistype}
 		\end{center}
     \vspace{\fill}\normalsize
-    \the\thesisauthor\hfill\the\thesisfrontpagestudentnumber{} %
-      \the\thesisauthorstudentnumber\\%
-    \the\thesisfrontpageborn\\[3em]
-    \newcounter{supervisors}\makeatletter%
+    \@@output@authors@and@ids
+    \ifnum\has@multiple@authors=0
+      \the\thesisfrontpageborn\\%
+    \fi
+    \\[3em]
+    \newcounter{supervisors}%
     \@for \name:=\the\thesissupervisors\do{%
       \addtocounter{supervisors}{1}\arabic{supervisors}. %
       \the\thesisfrontpagesupervisor: \name \\%
     }%
-    \makeatother\\[3em]%
+    \\[3em]%
     \the\thesisfrontpagedateofsubmission: \the\thesissubmissiondate
 \tikz [remember picture, overlay] %
 \node [shift={(-3cm,5cm)}] at (current page.south east) %
@@ -285,30 +352,16 @@
 
   \end{titlepage}
 }%
+\makeatother
 
 % Declaration of independent work
 \newcommand{\declaration}{
-  \begin{titlepage}
-    \vspace*{\fill}
-    \parindent 0cm
-    \begin{center}
-      \textbf{\huge \the\thesisdeclarationtitle}
-    \end{center}
-
-    \vspace{1cm}
-
-		\large \the\thesisdeclarationtext
-
-    \vspace{1cm}
-    \the\thesislocation, \the\thesissubmissiondate
-
-    \vspace{2cm}
-    \centering
-    \par\noindent\makebox[2.5in]{\hrulefill}%
-    \par\noindent\makebox[2.5in]{\the\thesisauthor}
-
-    \vspace*{\fill}
-  \end{titlepage}
+  \ifthenelse{\equal{\documentlanguage}{english}}{%
+    \includepdf[pages=1]{declaration.pdf}
+  }{}
+  \ifthenelse{\equal{\documentlanguage}{ngerman}}{%
+    \includepdf[pages=2]{declaration.pdf}
+  }{}
 }
 
 \newenvironment{frontmatter}{%

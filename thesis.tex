@@ -1,5 +1,6 @@
-% \documentclass[german,bachelor]{vrsysthesis}
+%\documentclass[german,bachelor]{buwthesis}
 \documentclass[english,master]{buwthesis}
+%\documentclass[english,project]{buwthesis}
 
 %
 % Values
@@ -9,12 +10,18 @@
 \ThesisSetKeywords{These, Are, My keywords} % only for PDF meta attributes
 
 % list authors with name and matrikel number
-\ThesisSetAuthor{Jane Doe (12345) and John Doe (23456)}
+\ThesisAddAuthor{Jane Doe}{12345}
+%\ThesisAddAuthor{John Doe}{23456}
+\ThesisSetDateOfBirth{1}{1}{2000} % Ignored for multiple authors
+\ThesisSetPlaceOfBirth{Weimar}    % Ignored for multiple authors
 
-\ThesisSetProgramme{Computer Science and Media}
+\ThesisSetProgramme{Computer Science and Digital Media}
+%\ThesisSetProgramme{Digital Engineering}
+%\ThesisSetProgramme{Informatik}
+
 \ThesisSetSupervisors{Prof.\ Dr.\ Jan Oliver Ringert, Prof.\ Dr.\ Unknown Yet}
 
-\ThesisSetSubmissionDate{31}{2}{2022}
+\ThesisSetSubmissionDate{31}{2}{2042}
 
 
 \usepackage{libertine}

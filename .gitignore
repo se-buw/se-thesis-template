@@ -1,0 +1,27 @@
+# LaTeX generated files
+*.aux
+*.log
+*.bbl
+*.blg
+*.bcf
+*.fls
+*.run.xml
+*.toc
+*.out
+*.pdf
+*.synctex.gz
+*.fdb_latexmk
+*.dpth
+*.md5
+*.auxlock
+
+# Build directories
+build/
+dist/
+
+# IDE and OS files
+.DS_Store
+.vscode/
+*.swp
+*.swo
+*~
